@@ -1,18 +1,25 @@
-# ------------------------------------------------------------------------------
+# -----------------
 # Cargo Build Stage
-# ------------------------------------------------------------------------------
+# -----------------
+
 FROM rust:1.44 as cargo-build
 
-WORKDIR /code
-COPY . .
+WORKDIR /usr/src/app
+COPY Cargo.lock .
+COPY Cargo.toml .
+RUN mkdir .cargo
+RUN cargo vendor > .cargo/config
+
+COPY ./src src
 RUN cargo build --release
+RUN cargo install --path . --verbose
 
-# ------------------------------------------------------------------------------
-# Cargo Deploy Stage
-# ------------------------------------------------------------------------------
-FROM debian:stretch-slim
-EXPOSE 3030
+# -----------------
+# Final Stage
+# -----------------
 
-COPY --from=cargo-build /code/target/release/pdf-generator-rs /root
+FROM debian:stable-slim
 
-CMD ["./root/pdf-generator-rs"]
+COPY --from=cargo-build /usr/local/cargo/bin/pdf-generator-rs /bin
+
+CMD ["pdf-generator-rs"]

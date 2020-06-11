@@ -19,3 +19,7 @@ uuid = { version = "0.8.1", features = ["v4"] }
 [dependencies.tokio]
 version = "0.2.6"
 features = ["macros", "fs"]
+
+[[bin]]
+name = "pdf-generator-rs"
+path = "src/main.rs"

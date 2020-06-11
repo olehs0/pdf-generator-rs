@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  web:
+    image: pdf-generator-rs:1.0
+    volumes:
+      - ./:/app
+
