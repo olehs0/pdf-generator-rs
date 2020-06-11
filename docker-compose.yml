@@ -2,7 +2,8 @@ version: '3'
 
 services:
   web:
-    image: pdf-generator-rs:1.0
-    volumes:
-      - ./:/app
+    build: .
+    environment:
+      -BIND_ADDRESS: 127.0.0.1:3030
 
+    network_mode: host
