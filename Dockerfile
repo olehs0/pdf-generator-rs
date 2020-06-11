@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # Cargo Build Stage
 # ------------------------------------------------------------------------------
-FROM rust:1.43 as cargo-build
+FROM rust:1.44 as cargo-build
 
 WORKDIR /code
 # Create blank project
