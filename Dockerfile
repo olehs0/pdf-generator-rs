@@ -4,14 +4,7 @@
 FROM rust:1.44 as cargo-build
 
 WORKDIR /code
-# Create blank project
-RUN USER=root cargo init
-# Copy Cargo.toml to get dependencies
-COPY Cargo.toml .
-# This is a dummy build to get the dependencies cached
-RUN cargo build --release
-
-# Build app (bin will be in /code/target/release/pdf-generator-rs)
+COPY . .
 RUN cargo build --release
 
 # ------------------------------------------------------------------------------
