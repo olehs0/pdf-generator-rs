@@ -19,7 +19,7 @@ RUN cargo build --release
 
 FROM debian:stable-slim
 EXPOSE 3030
-RUN apt update && apt install -yq openssl
+RUN apt update && apt install -y openssl
 
 COPY --from=cargo-build /usr/src/app/target/release/pdf-generator-rs /root
 WORKDIR /root
