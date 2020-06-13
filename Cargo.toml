@@ -14,7 +14,6 @@ env_logger = "0.7.1"
 log = "0.4"
 pretty_env_logger = "0.4"
 fantoccini = "0.13.1"
-uuid = { version = "0.8.1", features = ["v4"] }
 
 [dependencies.tokio]
 version = "0.2.6"

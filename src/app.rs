@@ -3,10 +3,10 @@ use serde::Deserialize;
 use std::env;
 use std::net::SocketAddr;
 use std::process::Command;
+use std::time::Instant;
 use tokio::fs::{self, File};
 use tokio::io::Result as IoResult;
 use tokio::prelude::*;
-use uuid::Uuid;
 use warp::{http, Filter};
 
 const WKHTMLTOPDF_CMD: &str = "wkhtmltopdf";
@@ -65,14 +65,28 @@ impl FileBuilder {
     }
 
     async fn build_pdf_from_html(&self, html_body: String) -> IoResult<Vec<u8>> {
-        &self.create_file(html_body, FileType::Html).await?;
+        self.create_file(html_body, FileType::Html).await?;
         let contents = self.generate_pdf_from_html().await?;
         Ok(contents)
     }
 
     async fn build_pdf_from_url(&self, url: String) -> IoResult<Vec<u8>> {
-        let contents = self.generate_pdf_from_url(url).await?;
-        Ok(contents)
+        if url.contains("export_page") {
+            let contents = self
+                .generate_pdf_from_url(url, String::from(".wfp--module__inner"))
+                .await?;
+            return Ok(contents);
+        } else if url.contains("export") {
+            let contents = self
+                .generate_pdf_from_url(url, String::from(".lineofsight__node"))
+                .await?;
+            return Ok(contents);
+        } else {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::Interrupted,
+                "comp or export page paramter not found",
+            ))
+        }
     }
 
     async fn create_file(&self, content: String, file_type: FileType) -> IoResult<()> {
@@ -109,7 +123,11 @@ impl FileBuilder {
         }
     }
 
-    async fn generate_pdf_from_url(&self, url: String) -> IoResult<Vec<u8>> {
+    async fn generate_pdf_from_url(
+        &self,
+        url: String,
+        css_class_wait_for: String,
+    ) -> IoResult<Vec<u8>> {
         // Create a client connected to web-driver on host:port
         let mut client = Client::new("http://localhost:4444")
             .await
@@ -117,19 +135,13 @@ impl FileBuilder {
         client.goto(&url.as_str()).await.unwrap();
         // Wait for specific condition
         client
-            .wait_for_find(Locator::Css(".lineofsight__node"))
+            .wait_for_find(Locator::Css(css_class_wait_for.as_str()))
             .await
             .unwrap();
         // Upload html content
-        let beneficiaries_html = client
-            .find(Locator::Css(".wfp--wrapper--background--lighter"))
-            .await
-            .unwrap()
-            .html(true)
-            .await
-            .unwrap();
+        let html_body = client.source().await.unwrap();
         client.close().await.unwrap();
-        self.create_file(beneficiaries_html, FileType::Html).await?;
+        self.create_file(html_body, FileType::Html).await?;
         let content = self.generate_pdf_from_html().await?;
         Ok(content)
     }
@@ -147,10 +159,10 @@ impl FileBuilder {
 }
 
 async fn generate(pdf_request: PdfRequest) -> Result<impl warp::Reply, warp::Rejection> {
-    let unique_id = Uuid::new_v4();
+    let now = Instant::now();
     let builder = FileBuilder::new(
-        String::from(format!("./media/{}.html", unique_id)),
-        String::from(format!("./media/{}.pdf", unique_id)),
+        String::from(format!("./media/{:?}.html", now)),
+        String::from(format!("./media/{:?}.pdf", now)),
     );
     match builder.generate_pdf(pdf_request).await {
         Ok(contents) => Ok(warp::reply::with_status(
