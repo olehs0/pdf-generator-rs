@@ -3,7 +3,7 @@ use serde::Deserialize;
 use std::env;
 use std::net::SocketAddr;
 use std::process::Command;
-use tokio::fs::File;
+use tokio::fs::{self, File};
 use tokio::io::Result as IoResult;
 use tokio::prelude::*;
 use uuid::Uuid;
@@ -37,15 +37,23 @@ impl FileBuilder {
         }
     }
 
+    async fn cleanup(&self) -> IoResult<()> {
+        fs::remove_file(&self.pdf_file_name).await?;
+        fs::remove_file(&self.html_file_name).await?;
+        Ok(())
+    }
+
     async fn generate_pdf(&self, pdf_request: PdfRequest) -> IoResult<Vec<u8>> {
         match pdf_request.html {
             Some(html_body) => {
                 let contents = self.build_pdf_from_html(html_body).await?;
+                self.cleanup().await?;
                 Ok(contents)
             }
             None => match pdf_request.url {
                 Some(url) => {
                     let contents = self.build_pdf_from_url(url).await?;
+                    self.cleanup().await?;
                     Ok(contents)
                 }
                 None => Err(std::io::Error::new(
