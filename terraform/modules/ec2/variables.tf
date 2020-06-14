@@ -7,25 +7,19 @@ variable "ec2_should_be_created" {
 variable "ec2_name" {
   description = "The Name of the EC2"
   type        = string
-  default     = "Free Tier EC2"
+  default     = "pdf-generator EC2"
 }
 
 variable "ec2_security_group_name" {
   description = "The Name of the EC2 Security Group"
   type        = string
-  default     = "Free Tier EC2 Security Group"
+  default     = "pdf-generator EC2 Security Group"
 }
 
 variable "ec2_security_group_description" {
   description = "The Description of the EC2 Security Group"
   type        = string
-  default     = "Free Tier EC2 Security Group"
-}
-
-variable "ec2_ami" {
-  description = "The Amazon Machine Image"
-  type        = string
-  default     = "ami-04b9e92b5572fa0d1" # Ubuntu 18.04 LTS (64-bit x86)  Free Tier eligible
+  default     = "pdf-generator EC2 Security Group"
 }
 
 variable "ec2_instance_type" {
@@ -47,7 +41,7 @@ variable "public_subnet_id" {
 variable "ec2_ssh_key_name" {
   description = "The SSH Key Name"
   type        = string
-  default     = "free-tier-ec2-key"
+  default     = "pdf-generator-ec2-key"
 }
 
 variable "ec2_ssh_public_key_path" {

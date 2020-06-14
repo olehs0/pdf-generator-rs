@@ -7,7 +7,7 @@ variable "subnet_should_be_created" {
 variable "subnet_name" {
   description = "The Name of the Public Subnet"
   type        = string
-  default     = "Free Tier Public Subnet"
+  default     = "pdf-generator Public Subnet"
 }
 
 variable "subnet_cidr_block" {
@@ -19,7 +19,7 @@ variable "subnet_cidr_block" {
 variable "subnet_availability_zone" {
   description = "The Availability Zone of the Public Subnet"
   type        = string
-  default     = "us-east-1a"
+  default     = "us-east-2a"
 }
 
 variable "vpc_id" {

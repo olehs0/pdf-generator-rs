@@ -7,7 +7,7 @@ variable "internet_gateway_should_be_created" {
 variable "internet_gateway_name" {
   description = "The Name of the Internet Gateway"
   type        = string
-  default     = "Free Tier Internet Gateway"
+  default     = "pdf-generator Internet Gateway"
 }
 
 variable "vpc_id" {
