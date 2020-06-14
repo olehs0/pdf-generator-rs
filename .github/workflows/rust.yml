@@ -19,3 +19,7 @@ jobs:
               run: cargo build --verbose
             - name: Run tests
               run: cargo test --verbose
+            - name: Build the tagged Docker image
+              run: docker build . --file Dockerfile --tag pdf-generator-rs:${{steps.vars.outputs.tag}}
+            - name: Push the tagged Docker image
+              run: docker push pdf-generator-rs:${{steps.vars.outputs.tag}}
