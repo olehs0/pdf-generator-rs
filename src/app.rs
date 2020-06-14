@@ -3,6 +3,7 @@ use serde::Deserialize;
 use std::env;
 use std::net::SocketAddr;
 use std::process::Command;
+use std::str;
 use std::time::Instant;
 use tokio::fs::{self, File};
 use tokio::io::Result as IoResult;
@@ -106,7 +107,7 @@ impl FileBuilder {
         }
     }
 
-    async fn read_file(&self, file_type: &FileType) -> IoResult<Vec<u8>> {
+    async fn read_file(&self, file_type: FileType) -> IoResult<Vec<u8>> {
         match file_type {
             FileType::Html => {
                 let mut pdf_file = File::open(&self.html_file_name).await.unwrap();
@@ -158,7 +159,7 @@ impl FileBuilder {
             .output()
             .expect("wkhtmltopdf post command failed to start");
         dbg!(res);
-        let content = self.read_file(&FileType::Pdf).await?;
+        let content = self.read_file(FileType::Pdf).await?;
         Ok(content)
     }
 }
@@ -199,4 +200,23 @@ pub async fn start() {
     warp::serve(pdf_builder_routes)
         .run(([127, 0, 0, 1], 3030))
         .await;
+}
+
+#[tokio::test]
+async fn test_build_html() {
+    let now = Instant::now();
+    let builder = FileBuilder::new(
+        String::from(format!("./{:?}.html", now)),
+        String::from(format!("./{:?}.pdf", now)),
+    );
+    builder
+        .create_file(String::from("<p>TEST</p>"), FileType::Html)
+        .await
+        .unwrap();
+    let content = builder.read_file(FileType::Html).await.unwrap();
+    let s = match str::from_utf8(&content[..]) {
+        Ok(v) => v,
+        Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+    };
+    assert_eq!(s, "<p>TEST</p>");
 }
