@@ -2,9 +2,8 @@ version: "3.8"
 
 services:
     web:
-        build:
-            context: .
-            network: host
+        build: .
+        network_mode: "host"
         environment:
             - BIND_ADDRESS=127.0.0.1:3030
             - RUST_LOG=trace
