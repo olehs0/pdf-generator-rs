@@ -134,16 +134,21 @@ impl FileBuilder {
             .expect("failed to connect to WebDriver");
         client.goto(&url.as_str()).await.unwrap();
         // Wait for specific condition
-        client
+        match client
             .wait_for_find(Locator::Css(css_class_wait_for.as_str()))
             .await
-            .unwrap();
-        // Upload html content
-        let html_body = client.source().await.unwrap();
-        client.close().await.unwrap();
-        self.create_file(html_body, FileType::Html).await?;
-        let content = self.generate_pdf_from_html().await?;
-        Ok(content)
+        {
+            Ok(data) => {
+                dbg!(data);
+                // Upload html content
+                let html_body = client.source().await.unwrap();
+                client.close().await.unwrap();
+                self.create_file(html_body, FileType::Html).await?;
+                let content = self.generate_pdf_from_html().await?;
+                Ok(content)
+            }
+            Err(err) => Err(std::io::Error::new(std::io::ErrorKind::Other, err))?,
+        }
     }
 
     async fn generate_pdf_from_html(&self) -> IoResult<Vec<u8>> {

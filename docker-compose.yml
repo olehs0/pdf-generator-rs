@@ -1,11 +1,12 @@
-version: '3'
+version: "3.8"
 
 services:
-  web:
-    build: .
-    environment:
-      -BIND_ADDRESS: 127.0.0.1:3030
-    ports:
-      - 3030:3030
-
-    network_mode: host
+    web:
+        build:
+            context: .
+            network: host
+        environment:
+            - BIND_ADDRESS=127.0.0.1:3030
+            - RUST_LOG=trace
+        ports:
+            - "3030:3030"

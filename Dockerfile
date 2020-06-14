@@ -23,6 +23,5 @@ RUN apt update && apt install -y openssl
 
 COPY --from=cargo-build /usr/src/app/target/release/pdf-generator-rs /root
 WORKDIR /root
-ENV BIND_ADDRESS=127.0.0.1:3030
 
 CMD ["./pdf-generator-rs"]
