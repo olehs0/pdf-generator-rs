@@ -8,4 +8,3 @@ async fn main() {
 
     app::start().await;
 }
-
