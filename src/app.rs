@@ -166,8 +166,8 @@ impl FileBuilder {
 async fn generate(pdf_request: PdfRequest) -> Result<impl warp::Reply, warp::Rejection> {
     let now = Instant::now();
     let builder = FileBuilder::new(
-        String::from(format!("./media/{:?}.html", now)),
-        String::from(format!("./media/{:?}.pdf", now)),
+        String::from(format!("./{:?}.html", now)),
+        String::from(format!("./{:?}.pdf", now)),
     );
     match builder.generate_pdf(pdf_request).await {
         Ok(contents) => Ok(warp::reply::with_status(
