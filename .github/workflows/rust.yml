@@ -30,8 +30,7 @@ jobs:
               uses: aws-actions/amazon-ecr-login@v1
             - name: Build, tag, and push image to Amazon ECR
               run: |
-                  docker build -t pdf-generator:latest .
-                  docker tag pdf-generator:latest 683720987193.dkr.ecr.us-east-2.amazonaws.com/pdf-generator:latest
+                  docker build -t 683720987193.dkr.ecr.us-east-2.amazonaws.com/pdf-generator:latest .
                   docker push 683720987193.dkr.ecr.us-east-2.amazonaws.com/pdf-generator:latest
 
             - name: Logout of Amazon ECR
