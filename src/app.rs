@@ -3,7 +3,7 @@ use std::env;
 use std::net::SocketAddr;
 use std::process::Command;
 use std::str;
-use std::time::Instant;
+use std::time::SystemTime;
 use tokio::fs::{self, File};
 use tokio::io::Result as IoResult;
 use tokio::prelude::*;
@@ -30,10 +30,10 @@ struct FileBuilder {
 }
 
 impl FileBuilder {
-    fn new(html_file_name: String, pdf_file_name: String) -> Self {
+    fn new(secs: u64) -> Self {
         Self {
-            html_file_name,
-            pdf_file_name,
+            html_file_name: String::from(format!("./{}.html", secs)),
+            pdf_file_name: String::from(format!("./{}.pdf", secs)),
         }
     }
 
@@ -47,7 +47,7 @@ impl FileBuilder {
         match pdf_request.html {
             Some(html_body) => {
                 let contents = self.build_pdf_from_html(html_body).await?;
-                // self.cleanup().await?;
+                self.cleanup().await?;
                 Ok(contents)
             }
             None => match pdf_request.url {
@@ -102,9 +102,9 @@ impl FileBuilder {
     async fn read_file(&self, file_type: FileType) -> IoResult<Vec<u8>> {
         match file_type {
             FileType::Html => {
-                let mut pdf_file = File::open(&self.html_file_name).await.unwrap();
+                let mut html_file = File::open(&self.html_file_name).await.unwrap();
                 let mut contents = vec![];
-                pdf_file.read_to_end(&mut contents).await.unwrap();
+                html_file.read_to_end(&mut contents).await.unwrap();
                 Ok(contents)
             }
             FileType::Pdf => {
@@ -144,11 +144,10 @@ impl FileBuilder {
 }
 
 async fn generate(pdf_request: PdfRequest) -> Result<impl warp::Reply, warp::Rejection> {
-    let now = Instant::now();
-    let builder = FileBuilder::new(
-        String::from(format!("./{:?}.html", now)),
-        String::from(format!("./{:?}.pdf", now)),
-    );
+    let now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
+    let builder = FileBuilder::new(now.as_secs());
     match builder.generate_pdf(pdf_request).await {
         Ok(contents) => Ok(warp::reply::with_status(
             contents,
@@ -183,11 +182,10 @@ pub async fn start() {
 
 #[tokio::test]
 async fn test_build_html() {
-    let now = Instant::now();
-    let builder = FileBuilder::new(
-        String::from(format!("./{:?}.html", now)),
-        String::from(format!("./{:?}.pdf", now)),
-    );
+    let now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
+    let builder = FileBuilder::new(now.as_secs());
     builder
         .create_file(String::from("<p>TEST</p>"), FileType::Html)
         .await
