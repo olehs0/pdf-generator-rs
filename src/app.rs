@@ -133,23 +133,27 @@ impl FileBuilder {
         let mut client = Client::new("http://localhost:4444")
             .await
             .expect("failed to connect to WebDriver");
-        client.goto(&url.as_str()).await.unwrap();
-        // Wait for specific condition
-        match client
-            .wait_for_find(Locator::Css(css_class_wait_for.as_str()))
-            .await
-        {
-            Ok(data) => {
-                dbg!(data);
-                // Upload html content
-                let html_body = client.source().await.unwrap();
-                client.close().await.unwrap();
-                self.create_file(html_body, FileType::Html).await?;
-                let content = self.generate_pdf_from_html().await?;
-                Ok(content)
-            }
-            Err(err) => Err(std::io::Error::new(std::io::ErrorKind::Other, err))?,
-        }
+        client.goto(url.as_str()).await.unwrap();
+        // Wait for
+        let is_loaded = client
+            .wait_for(|curr_client: &mut Client| async {
+                curr_client
+                    .find(Locator::Css(css_class_wait_for.as_str()))
+                    .await;
+                Ok(true)
+            })
+            .await;
+        Ok(Vec::new())
+        // {
+        //     Ok(element) => {
+        //         // Get html from element
+        //         let html_body = client.source().await.unwrap();
+        //         self.create_file(html_body, FileType::Html).await?;
+        //         let content = self.generate_pdf_from_html().await?;
+        //         Ok(content)
+        //     }
+        //     Err(err) => Err(err),
+        // }
     }
 
     async fn generate_pdf_from_html(&self) -> IoResult<Vec<u8>> {
