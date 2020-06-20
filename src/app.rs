@@ -133,7 +133,7 @@ impl FileBuilder {
         let mut client = Client::new("http://localhost:4444")
             .await
             .expect("failed to connect to WebDriver");
-        client.goto(&url.as_str()).await.unwrap();
+        client.goto(url.as_str()).await.unwrap();
         // Wait for find the element
         client
             .wait_for_find(Locator::Css(css_class_wait_for.as_str()))
