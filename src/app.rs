@@ -139,7 +139,8 @@ impl FileBuilder {
             .wait_for(|curr_client: &mut Client| async {
                 curr_client
                     .find(Locator::Css(css_class_wait_for.as_str()))
-                    .await;
+                    .await
+                    .unwrap();
                 Ok(true)
             })
             .await;
