@@ -1,4 +1,3 @@
-use fantoccini::{Client, Locator};
 use serde::Deserialize;
 use std::env;
 use std::net::SocketAddr;
@@ -48,13 +47,13 @@ impl FileBuilder {
         match pdf_request.html {
             Some(html_body) => {
                 let contents = self.build_pdf_from_html(html_body).await?;
-                self.cleanup().await?;
+                // self.cleanup().await?;
                 Ok(contents)
             }
             None => match pdf_request.url {
                 Some(url) => {
                     let contents = self.build_pdf_from_url(url).await?;
-                    self.cleanup().await?;
+                    // self.cleanup().await?;
                     Ok(contents)
                 }
                 None => Err(std::io::Error::new(
@@ -72,15 +71,8 @@ impl FileBuilder {
     }
 
     async fn build_pdf_from_url(&self, url: String) -> IoResult<Vec<u8>> {
-        if url.contains("export_page") {
-            let contents = self
-                .generate_pdf_from_url(url, String::from(".wfp--module__inner"))
-                .await?;
-            return Ok(contents);
-        } else if url.contains("export") {
-            let contents = self
-                .generate_pdf_from_url(url, String::from(".lineofsight__node"))
-                .await?;
+        if url.contains("export") {
+            let contents = self.generate_pdf_from_url(url).await?;
             return Ok(contents);
         } else {
             Err(std::io::Error::new(
@@ -124,25 +116,18 @@ impl FileBuilder {
         }
     }
 
-    async fn generate_pdf_from_url(
-        &self,
-        url: String,
-        css_class_wait_for: String,
-    ) -> IoResult<Vec<u8>> {
-        // Create a client connected to web-driver on host:port
-        let mut client = Client::new("http://localhost:4444")
-            .await
-            .expect("failed to connect to WebDriver");
-        client.goto(url.as_str()).await.unwrap();
-        // Wait for find the element
-        client
-            .wait_for_find(Locator::Css(css_class_wait_for.as_str()))
-            .await
-            .unwrap();
-        // Get web page source code
-        let html_body = client.source().await.unwrap();
-        self.create_file(html_body, FileType::Html).await?;
-        let content = self.generate_pdf_from_html().await?;
+    async fn generate_pdf_from_url(&self, url: String) -> IoResult<Vec<u8>> {
+        let res = Command::new(WKHTMLTOPDF_CMD)
+            .args(&[
+                "--javascript-delay",
+                "40000",
+                url.as_str(),
+                &self.pdf_file_name,
+            ])
+            .status()
+            .expect("wkhtmltopdf get url command failed to start");
+        dbg!(res);
+        let content = self.read_file(FileType::Pdf).await?;
         Ok(content)
     }
 
