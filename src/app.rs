@@ -10,6 +10,7 @@ use tokio::prelude::*;
 use warp::{http, Filter};
 
 const WKHTMLTOPDF_CMD: &str = "wkhtmltopdf";
+type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
 
 enum FileType {
     Html,
@@ -77,7 +78,7 @@ impl FileBuilder {
         } else {
             Err(std::io::Error::new(
                 std::io::ErrorKind::Interrupted,
-                "comp or export page paramter not found",
+                "comp or export page url paramter not found",
             ))
         }
     }
@@ -99,18 +100,18 @@ impl FileBuilder {
         }
     }
 
-    async fn read_file(&self, file_type: FileType) -> IoResult<Vec<u8>> {
+    async fn read_file(&self, file_type: FileType) -> Result<Vec<u8>, Error> {
         match file_type {
             FileType::Html => {
-                let mut html_file = File::open(&self.html_file_name).await.unwrap();
+                let mut html_file = File::open(&self.html_file_name).await?;
                 let mut contents = vec![];
-                html_file.read_to_end(&mut contents).await.unwrap();
+                html_file.read_to_end(&mut contents).await?;
                 Ok(contents)
             }
             FileType::Pdf => {
-                let mut pdf_file = File::open(&self.pdf_file_name).await.unwrap();
+                let mut pdf_file = File::open(&self.pdf_file_name).await?;
                 let mut contents = vec![];
-                pdf_file.read_to_end(&mut contents).await.unwrap();
+                pdf_file.read_to_end(&mut contents).await?;
                 Ok(contents)
             }
         }
@@ -127,7 +128,10 @@ impl FileBuilder {
             .status()
             .expect("wkhtmltopdf get url command failed to start");
         dbg!(res);
-        let content = self.read_file(FileType::Pdf).await?;
+        let content = self
+            .read_file(FileType::Pdf)
+            .await
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         Ok(content)
     }
 
@@ -138,7 +142,10 @@ impl FileBuilder {
             .output()
             .expect("wkhtmltopdf post command failed to start");
         dbg!(res);
-        let content = self.read_file(FileType::Pdf).await?;
+        let content = self
+            .read_file(FileType::Pdf)
+            .await
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         Ok(content)
     }
 }
