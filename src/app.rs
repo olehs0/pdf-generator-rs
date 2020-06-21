@@ -66,7 +66,9 @@ impl FileBuilder {
     }
 
     async fn build_pdf_from_html(&self, html_body: String) -> IoResult<Vec<u8>> {
-        self.create_file(html_body, FileType::Html).await?;
+        self.create_file(html_body, FileType::Html)
+            .await
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         let contents = self.generate_pdf_from_html().await?;
         Ok(contents)
     }
@@ -83,7 +85,7 @@ impl FileBuilder {
         }
     }
 
-    async fn create_file(&self, content: String, file_type: FileType) -> IoResult<()> {
+    async fn create_file(&self, content: String, file_type: FileType) -> Result<(), Error> {
         match file_type {
             // Create html file from existing body
             FileType::Html => {
