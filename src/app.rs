@@ -10,6 +10,7 @@ use tokio::prelude::*;
 use warp::{http, Filter};
 
 const WKHTMLTOPDF_CMD: &str = "wkhtmltopdf";
+type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
 
 enum FileType {
     Html,
@@ -65,7 +66,9 @@ impl FileBuilder {
     }
 
     async fn build_pdf_from_html(&self, html_body: String) -> IoResult<Vec<u8>> {
-        self.create_file(html_body, FileType::Html).await?;
+        self.create_file(html_body, FileType::Html)
+            .await
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         let contents = self.generate_pdf_from_html().await?;
         Ok(contents)
     }
@@ -77,12 +80,12 @@ impl FileBuilder {
         } else {
             Err(std::io::Error::new(
                 std::io::ErrorKind::Interrupted,
-                "comp or export page paramter not found",
+                "comp or export page url paramter not found",
             ))
         }
     }
 
-    async fn create_file(&self, content: String, file_type: FileType) -> IoResult<()> {
+    async fn create_file(&self, content: String, file_type: FileType) -> Result<(), Error> {
         match file_type {
             // Create html file from existing body
             FileType::Html => {
@@ -99,18 +102,18 @@ impl FileBuilder {
         }
     }
 
-    async fn read_file(&self, file_type: FileType) -> IoResult<Vec<u8>> {
+    async fn read_file(&self, file_type: FileType) -> Result<Vec<u8>, Error> {
         match file_type {
             FileType::Html => {
-                let mut html_file = File::open(&self.html_file_name).await.unwrap();
+                let mut html_file = File::open(&self.html_file_name).await?;
                 let mut contents = vec![];
-                html_file.read_to_end(&mut contents).await.unwrap();
+                html_file.read_to_end(&mut contents).await?;
                 Ok(contents)
             }
             FileType::Pdf => {
-                let mut pdf_file = File::open(&self.pdf_file_name).await.unwrap();
+                let mut pdf_file = File::open(&self.pdf_file_name).await?;
                 let mut contents = vec![];
-                pdf_file.read_to_end(&mut contents).await.unwrap();
+                pdf_file.read_to_end(&mut contents).await?;
                 Ok(contents)
             }
         }
@@ -119,15 +122,18 @@ impl FileBuilder {
     async fn generate_pdf_from_url(&self, url: String) -> IoResult<Vec<u8>> {
         let res = Command::new(WKHTMLTOPDF_CMD)
             .args(&[
-                "--javascript-delay",
-                "40000",
+                "--window-status",
+                "ready",
                 url.as_str(),
                 &self.pdf_file_name,
             ])
             .status()
             .expect("wkhtmltopdf get url command failed to start");
         dbg!(res);
-        let content = self.read_file(FileType::Pdf).await?;
+        let content = self
+            .read_file(FileType::Pdf)
+            .await
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         Ok(content)
     }
 
@@ -138,7 +144,10 @@ impl FileBuilder {
             .output()
             .expect("wkhtmltopdf post command failed to start");
         dbg!(res);
-        let content = self.read_file(FileType::Pdf).await?;
+        let content = self
+            .read_file(FileType::Pdf)
+            .await
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         Ok(content)
     }
 }
