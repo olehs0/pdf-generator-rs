@@ -122,8 +122,8 @@ impl FileBuilder {
     async fn generate_pdf_from_url(&self, url: String) -> IoResult<Vec<u8>> {
         let res = Command::new(WKHTMLTOPDF_CMD)
             .args(&[
-                "--javascript-delay",
-                "40000",
+                "--window-status",
+                "ready",
                 url.as_str(),
                 &self.pdf_file_name,
             ])
